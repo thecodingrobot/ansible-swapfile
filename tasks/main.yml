@@ -1,0 +1,18 @@
+---
+- name: Create swap file
+  command: dd if=/dev/zero of={{ swapfile_path }} count={{ swapfile_size_mb }} bs=1MiB creates={{ swapfile_path }}
+  register: write_swapfile
+
+- name: Set swap file permission
+  file: path={{ swapfile_path }} mode=0600
+
+- name: Init swap file
+  command: mkswap {{ swapfile_path }}
+  when: write_swapfile.changed
+
+- name: Enable swap file
+  command: swapon {{ swapfile_path }}
+  when: write_swapfile.changed
+
+- name: Add swapfile to /etc/fstab
+  lineinfile: dest=/etc/fstab line="{{ swapfile_path }}   none    swap    sw    0   0" state=present
